@@ -8,7 +8,11 @@
 #include <sys/time.h>
 #include <float.h>
 #include <vector>
+#include <filesystem>
+#include <string>
 #include "cuda.h"
+
+namespace fs = std::filesystem;
 
 #define min( a, b )			a > b ? b : a
 #define ceilDiv( a, b )		( a + b - 1 ) / b
@@ -174,6 +178,8 @@ int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &l
 
     /**Main processing **/
 
+	fs::path lspath(filename);	
+	auto files_dir = lspath.parent_path();
     flist = fopen(filename, "r");
 	while(!feof(flist)) {
 		/**
@@ -185,9 +191,9 @@ int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &l
             fprintf(stderr, "error reading filelist\n");
             exit(0);
         }
-        fp = fopen(dbname, "r");
+        fp = fopen((files_dir / dbname).c_str(), "r");
         if(!fp) {
-            printf("error opening a db\n");
+            printf("error opening a db; dbname=%s\n", dbname);
             exit(1);
         }
         // read each record
