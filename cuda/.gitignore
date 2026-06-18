@@ -1,0 +1,28 @@
+# Object files
+*.o
+*.obj
+*.lo
+*.la
+
+# Static/shared libraries
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.lib
+
+# Executables
+*.exe
+*.out
+
+# CUDA
+*.cubin
+*.fatbin
+*.ptx
+*.nvvp
+*.nsys-rep
+*.nsys-rep.*
+*.qdrep
+*.sqlite
+*.sass
