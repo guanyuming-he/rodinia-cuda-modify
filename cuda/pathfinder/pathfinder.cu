@@ -3,6 +3,11 @@
 #include <time.h>
 #include <assert.h>
 
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #define BLOCK_SIZE 256
 #define STR_SIZE 256
 #define DEVICE 0
@@ -21,42 +26,102 @@ int pyramid_height;
 
 //#define BENCH_PRINT
 
-void
-init(int argc, char** argv)
+// New patched init which can accept input matrix file.
+void init(int argc, char** argv)
 {
-	if(argc==4){
-		cols = atoi(argv[1]);
-		rows = atoi(argv[2]);
-                pyramid_height=atoi(argv[3]);
-	}else{
-                printf("Usage: dynproc row_len col_len pyramid_height\n");
-                exit(0);
+    if (argc == 4) {
+        // Original random-generation mode
+        cols = atoi(argv[1]);
+        rows = atoi(argv[2]);
+        pyramid_height = atoi(argv[3]);
+
+        data = new int[rows * cols];
+        wall = new int*[rows];
+
+        for (int n = 0; n < rows; n++)
+            wall[n] = data + cols * n;
+
+        result = new int[cols];
+
+        srand(M_SEED);
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                wall[i][j] = rand() % 10;
+            }
         }
-	data = new int[rows*cols];
-	wall = new int*[rows];
-	for(int n=0; n<rows; n++)
-		wall[n]=data+cols*n;
-	result = new int[cols];
-	
-	int seed = M_SEED;
-	srand(seed);
-
-	for (int i = 0; i < rows; i++)
-    {
-        for (int j = 0; j < cols; j++)
-        {
-            wall[i][j] = rand() % 10;
-        }
-    }
-#ifdef BENCH_PRINT
-    for (int i = 0; i < rows; i++)
-    {
-        for (int j = 0; j < cols; j++)
-        {
-            printf("%d ",wall[i][j]) ;
-        }
-        printf("\n") ;
-    }
+    }
+    else if (argc == 3) {
+        // File-input mode
+        const char* filename = argv[1];
+        pyramid_height = atoi(argv[2]);
+
+        std::ifstream in(filename);
+        if (!in) {
+            fprintf(stderr, "Failed to open %s\n", filename);
+            exit(1);
+        }
+
+        std::vector<int> values;
+        std::string line;
+
+        rows = 0;
+        cols = -1;
+
+        while (std::getline(in, line)) {
+            if (line.empty())
+                continue;
+
+            std::istringstream iss(line);
+
+            int value;
+            int current_cols = 0;
+
+            while (iss >> value) {
+                values.push_back(value);
+                current_cols++;
+            }
+
+            if (cols == -1)
+                cols = current_cols;
+            else if (current_cols != cols) {
+                fprintf(stderr,
+                        "Row %d has %d columns, expected %d\n",
+                        rows,
+                        current_cols,
+                        cols);
+                exit(1);
+            }
+
+            rows++;
+        }
+
+        data = new int[rows * cols];
+        wall = new int*[rows];
+
+        for (int n = 0; n < rows; n++)
+            wall[n] = data + cols * n;
+
+        result = new int[cols];
+
+        std::copy(values.begin(), values.end(), data);
+    }
+    else {
+        printf("Usage:\n");
+        printf(argv[0]);
+        printf(" rows cols pyramid_height\n");
+        printf(argv[0]);
+        printf(" matrix_file pyramid_height\n");
+        exit(1);
+    }
+
+#ifdef BENCH_PRINT
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            printf("%d ", wall[i][j]);
+        }
+        printf("\n");
+    }
 #endif
 }
 
