@@ -103,7 +103,20 @@ void bucketSort(float *d_input, float *d_output, int listsize,
 	///////////////////////////////////////////////////////////////////////////
 	checkCudaErrors(cudaMemcpy(l_pivotpoints, pivotPoints, (DIVISIONS)*sizeof(int), cudaMemcpyHostToDevice)); 
 	checkCudaErrors(cudaMemset((void *) d_offsets, 0, DIVISIONS * sizeof(int))); 
-	checkCudaErrors(cudaBindTexture(0, texPivot, l_pivotpoints, DIVISIONS * sizeof(int))); 
+	cudaChannelFormatDesc chanDesc =
+	   cudaCreateChannelDesc(32,0,0,0, cudaChannelFormatKindFloat);
+	cudaResourceDesc resDesc = {};
+	resDesc.resType = cudaResourceTypeLinear;
+	resDesc.res.linear.devPtr = (void*)(l_pivotpoints);
+	resDesc.res.linear.desc = chanDesc;
+	resDesc.res.linear.sizeInBytes = DIVISIONS * sizeof(int);
+	cudaTextureDesc texDesc = {};
+	texDesc.addressMode[0] = cudaAddressModeClamp;
+	texDesc.filterMode = cudaFilterModePoint;
+	texDesc.readMode = cudaReadModeElementType;
+	texDesc.normalizedCoords = 0;
+	checkCudaErrors(cudaCreateTextureObject(&texPivot, &resDesc, &texDesc, NULL));
+	//checkCudaErrors(cudaBindTexture(0, texPivot, l_pivotpoints, DIVISIONS * sizeof(int))); 
 	// Setup block and grid
     dim3 threads(BUCKET_THREAD_N, 1);
 	int blocks = ((listsize - 1) / (threads.x * BUCKET_BAND)) + 1; 

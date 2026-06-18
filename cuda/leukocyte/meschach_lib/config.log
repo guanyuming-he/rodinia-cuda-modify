@@ -4,4 +4,259 @@ running configure, to aid debugging if configure makes a mistake.
 configure:575: checking for acc
 configure:605: checking for cc
 configure:635: checking for gcc
-configure:665: checking for cc
+configure:748: checking whether the C compiler (gcc  ) works
+configure:764: gcc -o conftest    conftest.c  1>&5
+configure:761:1: warning: return type defaults to 'int' [-Wimplicit-int]
+  761 | main(){return(0);}
+      | ^~~~
+configure:790: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:795: checking whether we are using GNU C
+configure:804: gcc -E conftest.c
+configure:823: checking whether gcc accepts -g
+configure:855: checking how to run the C preprocessor
+configure:876: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:935: checking for AIX
+configure:961: checking for minix/config.h
+configure:971: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:967:10: fatal error: minix/config.h: No such file or directory
+  967 | #include <minix/config.h>
+      |          ^~~~~~~~~~~~~~~~
+compilation terminated.
+configure: failed program was:
+#line 966 "configure"
+#include "confdefs.h"
+#include <minix/config.h>
+configure:1009: checking for POSIXized ISC
+configure:1032: checking for ranlib
+configure:1063: checking for memory.h
+configure:1073: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1100: checking for ANSI C header files
+configure:1113: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1180: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:1175:67: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ 1175 | if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+      |                                                                   ^~~~
+configure:1171:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+ 1170 | #include <ctype.h>
+  +++ |+#include <stdlib.h>
+ 1171 | #define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+configure:1175:67: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1175 | if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+      |                                                                   ^~~~
+configure:1175:67: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1176:1: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1176 | exit (0); }
+      | ^~~~
+configure:1176:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1205: checking for complex.h
+configure:1215: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1241: checking for malloc.h
+configure:1251: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1277: checking for varargs.h
+configure:1287: gcc -E  conftest.c >/dev/null 2>conftest.out
+In file included from configure:1283:
+/usr/lib/gcc/x86_64-linux-gnu/12/include/varargs.h:4:2: error: #error "GCC no longer implements <varargs.h>."
+    4 | #error "GCC no longer implements <varargs.h>."
+      |  ^~~~~
+/usr/lib/gcc/x86_64-linux-gnu/12/include/varargs.h:5:2: error: #error "Revise your code to use <stdarg.h>."
+    5 | #error "Revise your code to use <stdarg.h>."
+      |  ^~~~~
+configure: failed program was:
+#line 1282 "configure"
+#include "confdefs.h"
+#include <varargs.h>
+configure:1316: checking for size_t
+configure:1349: checking for working const
+configure:1403: gcc -c -g -O2  conftest.c 1>&5
+configure:1424: checking whether byte ordering is bigendian
+configure:1442: gcc -c -g -O2  conftest.c 1>&5
+configure:1457: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1452:2: error: unknown type name 'not'; did you mean 'ino_t'?
+ 1452 |  not big endian
+      |  ^~~
+      |  ino_t
+configure:1452:10: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'endian'
+ 1452 |  not big endian
+      |          ^~~~~~
+configure: failed program was:
+#line 1446 "configure"
+#include "confdefs.h"
+#include <sys/types.h>
+#include <sys/param.h>
+int main() {
+
+#if BYTE_ORDER != BIG_ENDIAN
+ not big endian
+#endif
+; return 0; }
+configure:1579: gcc -c -g -O2  conftest.c 1>&5
+configure:1570:6: error: expected ';' before 'int'
+ 1570 | u_int
+      |      ^
+      |      ;
+ 1571 | int main() {
+      | ~~~   
+In file included from /usr/include/stdio.h:966,
+                 from configure:1572:
+/usr/include/x86_64-linux-gnu/bits/stdio.h: In function 'main':
+/usr/include/x86_64-linux-gnu/bits/stdio.h:39:1: error: nested function 'vprintf' declared 'extern'
+   39 | vprintf (const char *__restrict __fmt, __gnuc_va_list __arg)
+      | ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:39:1: error: static declaration of 'vprintf' follows non-static declaration
+/usr/include/stdio.h:378:12: note: previous declaration of 'vprintf' with type 'int(const char * restrict,  __va_list_tag *)'
+  378 | extern int vprintf (const char *__restrict __format, __gnuc_va_list __arg);
+      |            ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:47:1: error: nested function 'getchar' declared 'extern'
+   47 | getchar (void)
+      | ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:47:1: error: static declaration of 'getchar' follows non-static declaration
+/usr/include/stdio.h:582:12: note: previous declaration of 'getchar' with type 'int(void)'
+  582 | extern int getchar (void);
+      |            ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:56:1: error: nested function 'fgetc_unlocked' declared 'extern'
+   56 | fgetc_unlocked (FILE *__fp)
+      | ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:56:1: error: static declaration of 'fgetc_unlocked' follows non-static declaration
+/usr/include/stdio.h:600:12: note: previous declaration of 'fgetc_unlocked' with type 'int(FILE *)'
+  600 | extern int fgetc_unlocked (FILE *__stream) __nonnull ((1));
+      |            ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:66:1: error: nested function 'getc_unlocked' declared 'extern'
+   66 | getc_unlocked (FILE *__fp)
+      | ^~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:66:1: error: static declaration of 'getc_unlocked' follows non-static declaration
+/usr/include/stdio.h:589:12: note: previous declaration of 'getc_unlocked' with type 'int(FILE *)'
+  589 | extern int getc_unlocked (FILE *__stream) __nonnull ((1));
+      |            ^~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:73:1: error: nested function 'getchar_unlocked' declared 'extern'
+   73 | getchar_unlocked (void)
+      | ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:73:1: error: static declaration of 'getchar_unlocked' follows non-static declaration
+/usr/include/stdio.h:590:12: note: previous declaration of 'getchar_unlocked' with type 'int(void)'
+  590 | extern int getchar_unlocked (void);
+      |            ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:82:1: error: nested function 'putchar' declared 'extern'
+   82 | putchar (int __c)
+      | ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:82:1: error: static declaration of 'putchar' follows non-static declaration
+/usr/include/stdio.h:618:12: note: previous declaration of 'putchar' with type 'int(int)'
+  618 | extern int putchar (int __c);
+      |            ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:91:1: error: nested function 'fputc_unlocked' declared 'extern'
+   91 | fputc_unlocked (int __c, FILE *__stream)
+      | ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:91:1: error: static declaration of 'fputc_unlocked' follows non-static declaration
+/usr/include/stdio.h:627:12: note: previous declaration of 'fputc_unlocked' with type 'int(int,  FILE *)'
+  627 | extern int fputc_unlocked (int __c, FILE *__stream) __nonnull ((2));
+      |            ^~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:101:1: error: nested function 'putc_unlocked' declared 'extern'
+  101 | putc_unlocked (int __c, FILE *__stream)
+      | ^~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:101:1: error: static declaration of 'putc_unlocked' follows non-static declaration
+/usr/include/stdio.h:635:12: note: previous declaration of 'putc_unlocked' with type 'int(int,  FILE *)'
+  635 | extern int putc_unlocked (int __c, FILE *__stream) __nonnull ((2));
+      |            ^~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:108:1: error: nested function 'putchar_unlocked' declared 'extern'
+  108 | putchar_unlocked (int __c)
+      | ^~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:108:1: error: static declaration of 'putchar_unlocked' follows non-static declaration
+/usr/include/stdio.h:636:12: note: previous declaration of 'putchar_unlocked' with type 'int(int)'
+  636 | extern int putchar_unlocked (int __c);
+      |            ^~~~~~~~~~~~~~~~
+In file included from /usr/include/features.h:523,
+                 from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,
+                 from /usr/include/stdio.h:28:
+/usr/include/x86_64-linux-gnu/bits/stdio.h:128:1: error: nested function 'feof_unlocked' declared 'extern'
+  128 | __NTH (feof_unlocked (FILE *__stream))
+      | ^~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:128:1: error: static declaration of 'feof_unlocked' follows non-static declaration
+/usr/include/stdio.h:859:12: note: previous declaration of 'feof_unlocked' with type 'int(FILE *)'
+  859 | extern int feof_unlocked (FILE *__stream) __THROW __wur __nonnull ((1));
+      |            ^~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:135:1: error: nested function 'ferror_unlocked' declared 'extern'
+  135 | __NTH (ferror_unlocked (FILE *__stream))
+      | ^~~~~
+/usr/include/x86_64-linux-gnu/bits/stdio.h:135:1: error: static declaration of 'ferror_unlocked' follows non-static declaration
+/usr/include/stdio.h:860:12: note: previous declaration of 'ferror_unlocked' with type 'int(FILE *)'
+  860 | extern int ferror_unlocked (FILE *__stream) __THROW __wur __nonnull ((1));
+      |            ^~~~~~~~~~~~~~~
+/usr/include/stdlib.h:481:1: error: nested function 'atoi' declared 'extern'
+  481 | __NTH (atoi (const char *__nptr))
+      | ^~~~~
+/usr/include/stdlib.h:481:1: error: static declaration of 'atoi' follows non-static declaration
+In file included from configure:1574:
+/usr/include/stdlib.h:105:12: note: previous declaration of 'atoi' with type 'int(const char *)'
+  105 | extern int atoi (const char *__nptr)
+      |            ^~~~
+/usr/include/stdlib.h:486:1: error: nested function 'atol' declared 'extern'
+  486 | __NTH (atol (const char *__nptr))
+      | ^~~~~
+/usr/include/stdlib.h:486:1: error: static declaration of 'atol' follows non-static declaration
+/usr/include/stdlib.h:108:17: note: previous declaration of 'atol' with type 'long int(const char *)'
+  108 | extern long int atol (const char *__nptr)
+      |                 ^~~~
+/usr/include/stdlib.h:493:1: error: nested function 'atoll' declared 'extern'
+  493 | __NTH (atoll (const char *__nptr))
+      | ^~~~~
+/usr/include/stdlib.h:493:1: error: static declaration of 'atoll' follows non-static declaration
+/usr/include/stdlib.h:113:36: note: previous declaration of 'atoll' with type 'long long int(const char *)'
+  113 | __extension__ extern long long int atoll (const char *__nptr)
+      |                                    ^~~~~
+In file included from /usr/include/endian.h:35,
+                 from /usr/include/x86_64-linux-gnu/sys/types.h:176,
+                 from /usr/include/stdlib.h:514:
+/usr/include/x86_64-linux-gnu/bits/byteswap.h:34:1: error: invalid storage class for function '__bswap_16'
+   34 | __bswap_16 (__uint16_t __bsx)
+      | ^~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/byteswap.h:49:1: error: invalid storage class for function '__bswap_32'
+   49 | __bswap_32 (__uint32_t __bsx)
+      | ^~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/byteswap.h:70:1: error: invalid storage class for function '__bswap_64'
+   70 | __bswap_64 (__uint64_t __bsx)
+      | ^~~~~~~~~~
+In file included from /usr/include/endian.h:36:
+/usr/include/x86_64-linux-gnu/bits/uintn-identity.h:33:1: error: invalid storage class for function '__uint16_identity'
+   33 | __uint16_identity (__uint16_t __x)
+      | ^~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/uintn-identity.h:39:1: error: invalid storage class for function '__uint32_identity'
+   39 | __uint32_identity (__uint32_t __x)
+      | ^~~~~~~~~~~~~~~~~
+/usr/include/x86_64-linux-gnu/bits/uintn-identity.h:45:1: error: invalid storage class for function '__uint64_identity'
+   45 | __uint64_identity (__uint64_t __x)
+      | ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/stdlib.h:965:
+/usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h:20:1: error: nested function 'bsearch' declared 'extern'
+   20 | bsearch (const void *__key, const void *__base, size_t __nmemb, size_t __size,
+      | ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h:20:1: error: static declaration of 'bsearch' follows non-static declaration
+/usr/include/stdlib.h:960:14: note: previous declaration of 'bsearch' with type 'void *(const void *, const void *, size_t,  size_t,  int (*)(const void *, const void *))' {aka 'void *(const void *, const void *, long unsigned int,  long unsigned int,  int (*)(const void *, const void *))'}
+  960 | extern void *bsearch (const void *__key, const void *__base,
+      |              ^~~~~~~
+/usr/include/x86_64-linux-gnu/bits/stdlib-float.h:25:1: error: nested function 'atof' declared 'extern'
+   25 | __NTH (atof (const char *__nptr))
+      | ^~~~~
+/usr/include/x86_64-linux-gnu/bits/stdlib-float.h:25:1: error: static declaration of 'atof' follows non-static declaration
+/usr/include/stdlib.h:102:15: note: previous declaration of 'atof' with type 'double(const char *)'
+  102 | extern double atof (const char *__nptr)
+      |               ^~~~
+configure: failed program was:
+#line 1569 "configure"
+#include "confdefs.h"
+u_int
+int main() {
+#include <stdio.h>
+#ifdef __STDC__
+#include <stdlib.h>
+#endif
+; return 0; }
+configure:1636: checking for bcopy
+configure:1664: gcc -o conftest -g -O2   conftest.c  -lm 1>&5
+configure:1648:6: warning: conflicting types for built-in function 'bcopy'; expected 'void(const void *, void *, long unsigned int)' [-Wbuiltin-declaration-mismatch]
+ 1648 | char $ac_func();
+      |      ^~~~~
+configure:1636: checking for bzero
+configure:1664: gcc -o conftest -g -O2   conftest.c  -lm 1>&5
+configure:1648:6: warning: conflicting types for built-in function 'bzero'; expected 'void(void *, long unsigned int)' [-Wbuiltin-declaration-mismatch]
+ 1648 | char $ac_func();
+      |      ^~~~~

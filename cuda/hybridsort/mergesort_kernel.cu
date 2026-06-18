@@ -4,8 +4,11 @@
 #include <stdio.h>
 
 // declare texture reference for 1D float texture
-texture<float4, 1, cudaReadModeElementType> tex;
-texture<float, 1, cudaReadModeElementType> txt; 
+// declare in place
+//cudaTextureObject_t tex = 0;
+//cudaTextureObject_t txt = 0;
+//texture<float4, 1, cudaReadModeElementType> tex;
+//texture<float, 1, cudaReadModeElementType> txt; 
 
 __device__ float4 sortElem(float4 r) {
 	float4 nr;
@@ -52,20 +55,20 @@ __constant__ int finalStartAddr[DIVISIONS + 1];
 __constant__ int nullElems[DIVISIONS]; 
 
 __global__ void
-mergeSortFirst(float4 *result, int listsize) 
+mergeSortFirst(cudaTextureObject_t tex, float4 *result, int listsize) 
 {
     // Block index
     int bx = blockIdx.x;
     // Thread index
     //int tx = threadIdx.x;
 		if(bx*blockDim.x + threadIdx.x < listsize/4){
-			float4 r = tex1Dfetch(tex, (int)(bx*blockDim.x + threadIdx.x));
+			float4 r = tex1D<float4>(tex, (int)(bx*blockDim.x + threadIdx.x));
 			result[bx * blockDim.x + threadIdx.x] = sortElem(r); 
 		}
 }
 
 __global__ void
-mergeSortPass(float4 *result, int nrElems, int threadsPerDiv) 
+mergeSortPass(cudaTextureObject_t tex, float4 *result, int nrElems, int threadsPerDiv) 
 {
 	int tid = (blockIdx.x * blockDim.x) + threadIdx.x; 
 	// The division to work on
@@ -83,7 +86,7 @@ mergeSortPass(float4 *result, int nrElems, int threadsPerDiv)
 	if(Bstart >= constStartAddr[division + 1]){
 		for(int i=0; i<(constStartAddr[division + 1] - Astart); i++)
 		{
-			resStart[i] = tex1Dfetch(tex, Astart + i); 
+			resStart[i] = tex1D<float4>(tex, Astart + i); 
 		}
 		return; 
 	}
@@ -92,8 +95,8 @@ mergeSortPass(float4 *result, int nrElems, int threadsPerDiv)
 	int bidx = 0; 
 	int outidx = 0; 
 	float4 a, b;
-	a = tex1Dfetch(tex, Astart + aidx);  
-	b = tex1Dfetch(tex, Bstart + bidx); 
+	a = tex1D<float4>(tex, Astart + aidx);  
+	b = tex1D<float4>(tex, Bstart + bidx); 
 	
 	while(true)//aidx < nrElems/2)// || (bidx < nrElems/2  && (Bstart + bidx < constEndAddr[division])))
 	{
@@ -101,8 +104,8 @@ mergeSortPass(float4 *result, int nrElems, int threadsPerDiv)
 		 * For some reason, it's faster to do the texture fetches here than
 		 * after the merge
 		 */
-		float4 nextA = tex1Dfetch(tex, Astart + aidx + 1); 
-		float4 nextB = tex1Dfetch(tex, Bstart + bidx + 1); 
+		float4 nextA = tex1D<float4>(tex, Astart + aidx + 1); 
+		float4 nextB = tex1D<float4>(tex, Bstart + bidx + 1); 
 
 		float4 na = getLowest(a,b); 
 		float4 nb = getHighest(a,b); 

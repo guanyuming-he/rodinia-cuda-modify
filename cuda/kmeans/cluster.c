@@ -78,6 +78,21 @@
 extern double wtime(void);
 float	min_rmse_ref = FLT_MAX;			/* reference min_rmse value */
 
+void allocateMemory(int npoints, int nfeatures, int nclusters, float
+		**features);
+void deallocateMemory();
+int	// delta -- had problems when return value was of float type
+kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
+           int      nfeatures,				/* number of attributes for each point */
+           int      npoints,				/* number of data points */
+           int      nclusters,				/* number of clusters */
+           int     *membership,				/* which cluster the point belongs to */
+		   float  **clusters,				/* coordinates of cluster centers */
+		   int     *new_centers_len,		/* number of elements in each cluster */
+           float  **new_centers				/* sum of elements in each cluster */
+		   );
+
+
 /*---< cluster() >-----------------------------------------------------------*/
 int cluster(int      npoints,				/* number of data points */
             int      nfeatures,				/* number of attributes for each point */

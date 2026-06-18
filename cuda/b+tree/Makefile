@@ -1,7 +1,7 @@
 include ../../common/make.config
 
 CUDA_LIB =	-lcuda -lcudart
-CUDA_FLAG = -arch sm_20
+CUDA_FLAG = -arch sm_89
 
 # ====================================================================================================100
 #	END
@@ -16,7 +16,7 @@ CUDA_FLAG = -arch sm_20
 # ====================================================================================================100
 
 # OCL_DIR =/af14/lgs9a/Programs/NVIDIA/SDK
-# OCL_INC_DIR = -I$(OCL_DIR)/OpenCL/common/inc
+# OCL_INC_DIR = -I$(OCL_DIR)/OpenCL/common
 # OCL_LIB_DIR = -L$(OCL_DIR)/OpenCL/common/lib
 
 # ====================================================================================================100

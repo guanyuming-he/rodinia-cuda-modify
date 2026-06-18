@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include "backprop.h"
 #include <math.h>
+
+#include <unistd.h>
+#include <fcntl.h>
 //#define OPEN
 
 #define ABS(x)          (((x) > 0.0) ? (x) : (-(x)))
@@ -89,7 +92,7 @@ int m, n;
 }
 
 
-bpnn_randomize_weights(w, m, n)
+void bpnn_randomize_weights(w, m, n)
 float **w;
 int m, n;
 {
@@ -103,7 +106,7 @@ int m, n;
   }
 }
 
-bpnn_randomize_row(w, m)
+void bpnn_randomize_row(w, m)
 float *w;
 int m;
 {
@@ -115,7 +118,7 @@ int m;
 }
 
 
-bpnn_zero_weights(w, m, n)
+void bpnn_zero_weights(w, m, n)
 float **w;
 int m, n;
 {
@@ -129,7 +132,7 @@ int m, n;
 }
 
 
-void bpnn_initialize(seed)
+void bpnn_initialize(int seed)
 {
   printf("Random number generator seed: %d\n", seed);
   srand(seed);
@@ -304,6 +307,7 @@ int nh, no;
 
 void bpnn_adjust_weights(delta, ndelta, ly, nly, w, oldw)
 float *delta, *ly, **w, **oldw;
+int ndelta, nly;
 {
   float new_dw;
   int k, j;

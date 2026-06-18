@@ -22,7 +22,9 @@ endif
 
 
 backprop: backprop.o facetrain.o imagenet.o backprop_cuda.o 
-	$(CC) $(CC_FLAGS) backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
+	$(NVCC) $(NVCC_FLAGS) \
+	   	backprop.o facetrain.o imagenet.o backprop_cuda.o -o backprop \
+		-lm -Xlinker -pie
 
 %.o: %.[ch]
 	$(CC) $(CC_FLAGS) $< -c

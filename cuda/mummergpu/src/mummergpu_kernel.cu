@@ -29,7 +29,8 @@
 #if COALESCED_QUERIES
 #define GETQCHAR(qrypos) ((queries[((qrypos) >> 2) << 4]) & ((0xFF) << (((qrypos) & 0x00000003)) << 3)) >> ((((qrypos) & 0x00000003 )) << 3)
 #elif QRYTEX
-#define GETQCHAR(qrypos) tex1Dfetch(qrytex, qryAddr + qrypos)
+// cudaCreateChannelDesc(8,0,0,0, cudaChannelFormatKindUnsigned);
+#define GETQCHAR(qrypos) tex1D<unsigned char>(qrytex, qryAddr + qrypos)
 #else
 #define GETQCHAR(qrypos) queries[qrypos]
 #endif
@@ -127,22 +128,25 @@
 #define SHIFT_QUERIES(queries, qryAddr) queries += qryAddr
 #endif
 
-#if REORDER_TREE
-texture<uint4, 2, cudaReadModeElementType> nodetex;
-texture<uint4, 2, cudaReadModeElementType> childrentex;
-#else
-texture<uint4, 1, cudaReadModeElementType> nodetex;
-texture<uint4, 1, cudaReadModeElementType> childrentex;
-#endif
-
-
-#if REORDER_REF
-texture<char, 2, cudaReadModeElementType> reftex;
-#else
-texture<char, 1, cudaReadModeElementType> reftex;
-#endif
-
-texture<char, 1, cudaReadModeElementType> qrytex;
+__device__ cudaTextureObject_t nodetex = 0;
+__device__ cudaTextureObject_t childrentex = 0;
+cudaTextureObject_t reftex = 0;
+cudaTextureObject_t qrytex = 0;
+//#if REORDER_TREE
+//texture<uint4, 2, cudaReadModeElementType> nodetex;
+//texture<uint4, 2, cudaReadModeElementType> childrentex;
+//#else
+//texture<uint4, 1, cudaReadModeElementType> nodetex;
+//texture<uint4, 1, cudaReadModeElementType> childrentex;
+//#endif
+//
+//#if REORDER_REF
+//texture<char, 2, cudaReadModeElementType> reftex;
+//#else
+//texture<char, 1, cudaReadModeElementType> reftex;
+//#endif
+//
+//texture<char, 1, cudaReadModeElementType> qrytex;
 
  struct __align__(8) _MatchCoord
  {
@@ -316,13 +320,15 @@ __device__ char getRef(int refpos
     int x = bigx >> 2;
    
 	#if REFTEX
-		return tex2D(reftex, x, y);
+	// cudaCreateChannelDesc(8, 0, 0, 0, cudaChannelFormatKindSigned);
+		return tex2D<char>(reftex, x, y);
 	#else
 		return *(ref + 65536 * y + x);
 	#endif
 #else
 	#if REFTEX
-		return tex1Dfetch(reftex, refpos);
+	// cudaCreateChannelDesc(8, 0, 0, 0, cudaChannelFormatKindSigned);
+		return tex1D<char>(reftex, refpos);
 	#else
 		return ref[refpos];
 	#endif
@@ -372,9 +378,10 @@ __device__ uint4 getNode(unsigned int cur,
 
 #if NODETEX
 #if REORDER_TREE
-  return tex2D(nodetex, cur & 0x0000FFFF, (cur & 0xFFFF0000) >> 16);
+	//cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindUnsigned);
+  return tex2D<uint4>(nodetex, cur & 0x0000FFFF, (cur & 0xFFFF0000) >> 16);
 #else
-  return tex1Dfetch(nodetex, cur);
+  return tex1D<uint4>(nodetex, cur);
 #endif
 
 #else
@@ -415,9 +422,10 @@ __device__ uint4 getChildren(unsigned int cur,
 
 #if CHILDTEX
 #if REORDER_TREE
-  return tex2D(childrentex, cur & 0x0000FFFF, (cur & 0xFFFF0000) >> 16);
+  //cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindUnsigned);		
+  return tex2D<uint4>(childrentex, cur & 0x0000FFFF, (cur & 0xFFFF0000) >> 16);
 #else
-  return tex1Dfetch(childrentex, cur);
+  return tex1D<uint4>(childrentex, cur);
 #endif
 #else
 #if REORDER_TREE
@@ -925,7 +933,7 @@ mummergpuRCKernel(MatchCoord* match_coords,
 		 XPRINTF("Next edge to follow: %c (%d)\n", c, qry_match_len);
 
 	     _PixelOfChildren children;
-		 children.data = tex2D(childrentex,cur.x, cur.y);
+		 children.data = tex2D<uint4>(childrentex,cur.x, cur.y);
 		 prev = cur;
 
 		 switch(c)
@@ -955,7 +963,7 @@ mummergpuRCKernel(MatchCoord* match_coords,
 		 }
 
          {
-		   node.data = tex2D(nodetex, cur.data & 0xFFFF, cur.data >> 16);
+		   node.data = tex2D<uint4>(nodetex, cur.data & 0xFFFF, cur.data >> 16);
          }
 
 		 XPRINTF(" Edge coordinates: %d - %d\n", MKI(node.start), MKI(node.end));
@@ -1027,7 +1035,7 @@ mummergpuRCKernel(MatchCoord* match_coords,
 
       NEXT_SUBSTRING:
 
-      node.data = tex2D(nodetex, prev.x, prev.y);
+      node.data = tex2D<uint4>(nodetex, prev.x, prev.y);
       cur = node.suffix;
 
       XPRINTF(" following suffix link. mustmatch:%d qry_match_len:%d sl:(%d,%d)\n", 

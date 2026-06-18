@@ -76,13 +76,17 @@ void trap_dbg()
 } while (0)
 
 unsigned int num_bind_tex_calls = 0;
-#define BIND_TEX(offset, tex, arr, desc, len) do {							 \
-	CUDA_SAFE_CALL(cudaBindTexture(offset, tex, arr, desc, len));			 \
-	++num_bind_tex_calls;													 \
-} while(0)
-
-#define BIND_TEX_ARRAY(tex, arr, desc) do {							 		 \
-	CUDA_SAFE_CALL(cudaBindTextureToArray(tex, arr, desc));					 \
+//#define BIND_TEX(offset, tex, arr, desc, len) do {							 \
+//	CUDA_SAFE_CALL(cudaBindTexture(offset, tex, arr, desc, len));			 \
+//	++num_bind_tex_calls;													 \
+//} while(0)
+//
+//#define BIND_TEX_ARRAY(tex, arr, desc) do {							 		 \
+//	CUDA_SAFE_CALL(cudaBindTextureToArray(tex, arr, desc));					 \
+//	++num_bind_tex_calls;													 \
+//} while(0)
+#define CREATE_TEX_OBJ(tex, resDesc, texDesc) do {							 		 \
+	CUDA_SAFE_CALL(cudaCreateTextureObject(tex, resDesc, texDesc, NULL));					 \
 	++num_bind_tex_calls;													 \
 } while(0)
 
@@ -125,7 +129,7 @@ void createTreeTexture(const char * filename,
                        PixelOfNode** nodeTexture, 
 					   PixelOfChildren** childrenTexture,
                        unsigned int* width, 
-                       unsigned int* node_height,
+unsigned int* node_height,
                        unsigned int* children_height,
 					   AuxiliaryNodeData** aux_data,
 					   int* num_match_coords,
@@ -500,12 +504,24 @@ void loadReferenceTexture(MatchContext* ctx)
                                           numrows*ref->pitch,
                                           cudaMemcpyHostToDevice));
                                           
-        reftex.addressMode[0] = cudaAddressModeClamp;
-        reftex.addressMode[1] = cudaAddressModeClamp;
-        reftex.filterMode = cudaFilterModePoint;
-        reftex.normalized = false;
-        
-		BIND_TEX_ARRAY(reftex, (cudaArray*)ref->d_ref_array, refTextureDesc);
+
+        //reftex.addressMode[0] = cudaAddressModeClamp;
+        //reftex.addressMode[1] = cudaAddressModeClamp;
+        //reftex.filterMode = cudaFilterModePoint;
+        //reftex.normalized = false;
+		//BIND_TEX_ARRAY(reftex, (cudaArray*)ref->d_ref_array, refTextureDesc);
+		// Specify texture
+		cudaResourceDesc resDesc = {};
+		resDesc.resType = cudaResourceTypeArray;
+		//resDesc.res.array.desc = refTextureDesc;
+		resDesc.res.array.array = (cudaArray*)ref->d_ref_array;
+		cudaTextureDesc texDesc = {};
+		texDesc.addressMode[0] = cudaAddressModeClamp;
+		texDesc.addressMode[1] = cudaAddressModeClamp;
+		texDesc.filterMode = cudaFilterModePoint;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 0;
+		CREATE_TEX_OBJ(&reftex, &resDesc, &texDesc);
 
         ctx->ref->bytes_on_board += numrows * ref->pitch;
 #else
@@ -516,12 +532,23 @@ void loadReferenceTexture(MatchContext* ctx)
 									ref->len, 
 									cudaMemcpyHostToDevice) );
 									
-		reftex.addressMode[0] = cudaAddressModeClamp;
-		reftex.filterMode = cudaFilterModePoint;
-		reftex.normalized = false;    // access with normalized texture coordinates
+		//reftex.addressMode[0] = cudaAddressModeClamp;
+		//reftex.filterMode = cudaFilterModePoint;
+		//reftex.normalized = false;    // access with normalized texture coordinates
+		//BIND_TEX(0, reftex, (void*)(ref->d_ref_array), refDesc, ref->len);
 		cudaChannelFormatDesc refDesc =
            cudaCreateChannelDesc(8,0,0,0, cudaChannelFormatKindUnsigned);
-		BIND_TEX(0, reftex, (void*)(ref->d_ref_array), refDesc, ref->len);
+		cudaResourceDesc resDesc = {};
+		resDesc.resType = cudaResourceTypeLinear;
+		resDesc.res.linear.devPtr = (void*)(ref->d_ref_array);
+		resDesc.res.linear.desc = refDesc;
+		resDesc.res.linear.sizeInBytes = ref->len;
+		cudaTextureDesc texDesc = {};
+		texDesc.addressMode[0] = cudaAddressModeClamp;
+		texDesc.filterMode = cudaFilterModePoint;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 0;
+		CREATE_TEX_OBJ(&reftex, &resDesc, &texDesc);
 
         ctx->ref->bytes_on_board += ref->len;
 #endif
@@ -567,7 +594,8 @@ void loadReferenceTexture(MatchContext* ctx)
 void unloadReferenceString(Reference* ref)
 {
 #if REFTEX
-   CUDA_SAFE_CALL(cudaUnbindTexture( reftex ) );
+	//CUDA_SAFE_CALL(cudaUnbindTexture( reftex ) );
+	CUDA_SAFE_CALL(cudaDestroyTextureObject( reftex ) );
 #endif
 
 #if REORDER_REF && REFTEX
@@ -586,7 +614,8 @@ void unloadReferenceTree(MatchContext* ctx)
 #if REORDER_TREE
    // Unload nodetex
 	#if NODETEX
-	   CUDA_SAFE_CALL(cudaUnbindTexture( nodetex ) );
+	   //CUDA_SAFE_CALL(cudaUnbindTexture( nodetex ) );
+	   CUDA_SAFE_CALL(cudaDestroyTextureObject( nodetex ) );
 	   CUDA_SAFE_CALL(cudaFreeArray((cudaArray*)(ref->d_node_tex_array)));
 	#else
 		CUDA_SAFE_CALL(cudaFree(ref->d_node_tex_array));
@@ -597,7 +626,8 @@ void unloadReferenceTree(MatchContext* ctx)
     if (ref->d_children_tex_array)
     {
 	#if CHILDTEX
-	   CUDA_SAFE_CALL(cudaUnbindTexture( childrentex ) );
+	   //CUDA_SAFE_CALL(cudaUnbindTexture( childrentex ) );
+	   CUDA_SAFE_CALL(cudaDestroyTextureObject( childrentex ) );
 	   CUDA_SAFE_CALL(cudaFreeArray((cudaArray*)(ref->d_children_tex_array)));
 	#else
 		CUDA_SAFE_CALL(cudaFree(ref->d_children_tex_array));
@@ -608,7 +638,8 @@ void unloadReferenceTree(MatchContext* ctx)
 #else
 
 	#if NODETEX
-	   CUDA_SAFE_CALL(cudaUnbindTexture( nodetex ) );
+	   //CUDA_SAFE_CALL(cudaUnbindTexture( nodetex ) );
+	   CUDA_SAFE_CALL(cudaDestroyTextureObject( nodetex ) );
 	#endif
 		CUDA_SAFE_CALL(cudaFree(ref->d_node_tex_array));
 	
@@ -618,7 +649,8 @@ void unloadReferenceTree(MatchContext* ctx)
        if (ref->d_children_tex_array)
        {
 	#if CHILDTEX
-	   CUDA_SAFE_CALL(cudaUnbindTexture( childrentex ) );
+	   //CUDA_SAFE_CALL(cudaUnbindTexture( childrentex ) );
+	   CUDA_SAFE_CALL(cudaDestroyTextureObject( childrentex ) );
 	#endif
 
 	CUDA_SAFE_CALL(cudaFree(ref->d_children_tex_array));
@@ -676,13 +708,23 @@ void loadReference(MatchContext* ctx) {
                                            ref->tex_width * ref->tex_node_height * sizeof(PixelOfNode),
                                            cudaMemcpyHostToDevice));
 
-        nodetex.addressMode[0] = cudaAddressModeClamp;
-        nodetex.addressMode[1] = cudaAddressModeClamp;
-        nodetex.filterMode = cudaFilterModePoint;
-        nodetex.normalized = false;    // access with normalized texture coordinates
-        
-        BIND_TEX_ARRAY(nodetex, (cudaArray*)ref->d_node_tex_array, 
-					nodeTextureDesc);
+        //nodetex.addressMode[0] = cudaAddressModeClamp;
+        //nodetex.addressMode[1] = cudaAddressModeClamp;
+        //nodetex.filterMode = cudaFilterModePoint;
+        //nodetex.normalized = false;    // access with normalized texture coordinates
+        //BIND_TEX_ARRAY(nodetex, (cudaArray*)ref->d_node_tex_array, 
+		//			nodeTextureDesc);
+		cudaResourceDesc resDesc = {};
+		resDesc.resType = cudaResourceTypeArray;
+		resDesc.res.array.array = (cudaArray*)ref->d_node_tex_array;
+		//resDesc.res.array.desc = nodeTextureDesc;
+		cudaTextureDesc texDesc = {};
+		texDesc.addressMode[0] = cudaAddressModeClamp;
+		texDesc.addressMode[1] = cudaAddressModeClamp;
+		texDesc.filterMode = cudaFilterModePoint;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 0;
+		CREATE_TEX_OBJ(&nodetex, &resDesc, &texDesc);
 #else
 		size_t nodepitch;
 		
@@ -717,13 +759,24 @@ void loadReference(MatchContext* ctx) {
                                           ref->tex_width * ref->tex_children_height * sizeof(PixelOfChildren),
                                           cudaMemcpyHostToDevice));
                                           
-        childrentex.addressMode[0] = cudaAddressModeClamp;
-        childrentex.addressMode[1] = cudaAddressModeClamp;
-        childrentex.filterMode = cudaFilterModePoint;
-        childrentex.normalized = false;    // access with normalized texture coordinates
+        //childrentex.addressMode[0] = cudaAddressModeClamp;
+        //childrentex.addressMode[1] = cudaAddressModeClamp;
+        //childrentex.filterMode = cudaFilterModePoint;
+        //childrentex.normalized = false;    // access with normalized texture coordinates
+        //BIND_TEX_ARRAY(childrentex, (cudaArray*)(ref->d_children_tex_array),
+		//			childrenTextureDesc);
+		cudaResourceDesc resDesc = {};
+		resDesc.resType = cudaResourceTypeArray;
+		resDesc.res.array.array = (cudaArray*)ref->d_children_tex_array;
+		//resDesc.res.array.desc = childrenTextureDesc;
+		cudaTextureDesc texDesc = {};
+		texDesc.addressMode[0] = cudaAddressModeClamp;
+		texDesc.addressMode[1] = cudaAddressModeClamp;
+		texDesc.filterMode = cudaFilterModePoint;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 0;
+		CREATE_TEX_OBJ(&childrentex, &resDesc, &texDesc);
         
-        BIND_TEX_ARRAY(childrentex, (cudaArray*)(ref->d_children_tex_array),
-					childrenTextureDesc);
 #else
 		size_t childpitch;
 
@@ -775,12 +828,26 @@ void loadReference(MatchContext* ctx) {
 #if NODETEX  
         cudaChannelFormatDesc nodeTextureDesc =
             cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindUnsigned);
-        nodetex.addressMode[0] = cudaAddressModeClamp;
-        nodetex.filterMode = cudaFilterModePoint;
-        nodetex.normalized = false;    // access with normalized texture coordinates
+        //nodetex.addressMode[0] = cudaAddressModeClamp;
+        //nodetex.filterMode = cudaFilterModePoint;
+        //nodetex.normalized = false;    // access with normalized texture coordinates
+        //BIND_TEX(0, nodetex, (void*)(ref->d_node_tex_array), nodeTextureDesc, 
+		//			ref->tex_node_height* sizeof(PixelOfNode));
+		cudaResourceDesc resDesc = {};
+		resDesc.resType = cudaResourceTypeLinear;
+		resDesc.res.linear.devPtr = ref->d_node_tex_array;
+		resDesc.res.linear.desc = nodeTextureDesc;
+		resDesc.res.linear.sizeInBytes = ref->tex_node_height * sizeof(PixelOfNode);
+		cudaTextureDesc texDesc = {};
+		texDesc.addressMode[0] = cudaAddressModeClamp;
+		texDesc.filterMode = cudaFilterModePoint;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 0;
+		CREATE_TEX_OBJ(&nodetex, &resDesc, &texDesc);
         
-        BIND_TEX(0, nodetex, (void*)(ref->d_node_tex_array), nodeTextureDesc, 
-					ref->tex_node_height* sizeof(PixelOfNode));
+#else
+		size_t childpitch;
+        
 #endif
 		if (ref->tex_children_height)
 		{
@@ -795,12 +862,25 @@ void loadReference(MatchContext* ctx) {
 #if CHILDTEX  
 	        cudaChannelFormatDesc childTextureDesc =
 	            cudaCreateChannelDesc(32, 32, 32, 32, cudaChannelFormatKindUnsigned);
-	        childrentex.addressMode[0] = cudaAddressModeClamp;
-	        childrentex.filterMode = cudaFilterModePoint;
-	        childrentex.normalized = false;    // access with normalized texture coordinates
+	        //childrentex.addressMode[0] = cudaAddressModeClamp;
+	        //childrentex.filterMode = cudaFilterModePoint;
+	        //childrentex.normalized = false;    // access with normalized texture coordinates
 
-	        BIND_TEX(0, childrentex, (void*)(ref->d_children_tex_array), 
-						childTextureDesc, ref->tex_children_height* sizeof(PixelOfChildren));
+	        //BIND_TEX(0, childrentex, (void*)(ref->d_children_tex_array), 
+			//			childTextureDesc, ref->tex_children_height* sizeof(PixelOfChildren));
+			cudaResourceDesc resDesc = {};
+			resDesc.resType = cudaResourceTypeLinear;
+			resDesc.res.linear.devPtr = ref->d_children_tex_array;
+			resDesc.res.linear.desc = childTextureDesc;
+			resDesc.res.linear.sizeInBytes = ref->tex_children_height * sizeof(PixelOfChildren);
+			cudaTextureDesc texDesc = {};
+			texDesc.addressMode[0] = cudaAddressModeClamp;
+			texDesc.filterMode = cudaFilterModePoint;
+			texDesc.readMode = cudaReadModeElementType;
+			texDesc.normalizedCoords = 0;
+			CREATE_TEX_OBJ(&childrentex, &resDesc, &texDesc);
+			
+			
 #endif
         }
 
@@ -926,13 +1006,26 @@ void loadQueries(MatchContext* ctx)
                                    cudaMemcpyHostToDevice));
 
 #if QRYTEX
-		qrytex.addressMode[0] = cudaAddressModeClamp;
-		qrytex.filterMode = cudaFilterModePoint;
-		qrytex.normalized = false;    // access with normalized texture coordinates
 		cudaChannelFormatDesc qryDesc =
            cudaCreateChannelDesc(8,0,0,0, cudaChannelFormatKindUnsigned);
-		BIND_TEX(0, qrytex, (void*)(queries->d_tex_array), qryDesc, 
-					queries->texlen);
+		//qrytex.addressMode[0] = cudaAddressModeClamp;
+		//qrytex.filterMode = cudaFilterModePoint;
+		//qrytex.normalized = false;    // access with normalized texture coordinates
+		//BIND_TEX(0, qrytex, (void*)(queries->d_tex_array), qryDesc, 
+		//			queries->texlen);
+		cudaResourceDesc resDesc = {};
+		resDesc.resType = cudaResourceTypeLinear;
+		resDesc.res.linear.devPtr = queries->d_tex_array;
+		resDesc.res.linear.desc = qryDesc;
+		resDesc.res.linear.sizeInBytes = queries->texlen;
+		cudaTextureDesc texDesc = {};
+		texDesc.addressMode[0] = cudaAddressModeClamp;
+		texDesc.filterMode = cudaFilterModePoint;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 0;
+		CREATE_TEX_OBJ(&qrytex, &resDesc, &texDesc);
+		
+		
 #endif
         CUDA_MALLOC((void**) &queries->d_addrs_tex_array,
                                    numQueries * sizeof(int));
@@ -1426,7 +1519,7 @@ void runPrintKernel(MatchContext* ctx,
 #endif
                                              );
                                              
-    cudaThreadSynchronize();
+    cudaDeviceSynchronize();
     
     
     
@@ -1444,7 +1537,7 @@ void runPrintKernel(MatchContext* ctx,
                               (void*)d_alignments,
                               alignmentSize,
                               cudaMemcpyDeviceToHost));   
-    cudaThreadSynchronize();
+    cudaDeviceSynchronize();
 	stopTimer(atimer);
 
 	float atime = getTimerValue(atimer);
@@ -1573,7 +1666,7 @@ void getExactAlignments(MatchContext * ctx, ReferencePage * page, bool on_cpu)
 
 		if (num_bind_tex_calls > 100)
 		{
-        	cudaThreadExit();
+        	cudaDeviceReset();
 			num_bind_tex_calls = 0;
 			loadReference(ctx);
 			loadQueries(ctx);
@@ -2021,7 +2114,7 @@ void matchQueryBlockToReferencePage(MatchContext* ctx,
 	{
 
 		matchOnGPU(ctx, reverse_complement);
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 
 	}
 	stopTimer(ktimer);
@@ -2110,7 +2203,7 @@ int matchQueriesToReferencePage(MatchContext* ctx, ReferencePage* page)
         destroyQueryBlock(ctx->queries);
 		if (num_bind_tex_calls > 100)
 		{
-        	cudaThreadExit();
+        	cudaDeviceReset();
 			num_bind_tex_calls = 0;
 			loadReference(ctx);
 		}

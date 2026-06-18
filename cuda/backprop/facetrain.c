@@ -11,7 +11,10 @@ extern void exit();
 
 int layer_size = 0;
 
-backprop_face()
+void load(BPNN *net);
+void bpnn_train_cuda(BPNN *net, float *eo, float *eh);
+
+void backprop_face()
 {
   BPNN *net;
   int i;

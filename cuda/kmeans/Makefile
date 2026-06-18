@@ -22,9 +22,10 @@ endif
 
 
 kmeans: cluster.o getopt.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o
-	$(CC) $(CC_FLAGS) cluster.o getopt.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o -o kmeans -L$(CUDA_LIB_DIR) -lcuda -lcudart -lm
+	$(NVCC) $(NVCC_FLAGS) -Xcompiler -fopenmp \
+	   	cluster.o getopt.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o -o kmeans -L$(CUDA_LIB_DIR) -lcuda -lm
 
-%.o: %.[ch]
+%.o: %.c
 	$(CC) $(CC_FLAGS) $< -c
 
 kmeans_cuda.o: kmeans_cuda.cu 

@@ -872,8 +872,10 @@ inline int gpuDeviceInit(int devID)
 
     cudaDeviceProp deviceProp;
     checkCudaErrors(cudaGetDeviceProperties(&deviceProp, devID));
+	int computeMode;
+	cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, devID);
 
-    if (deviceProp.computeMode == cudaComputeModeProhibited)
+    if (computeMode == cudaComputeModeProhibited)
     {
         fprintf(stderr, "Error: device is running in <Compute Mode Prohibited>, no threads can use ::cudaSetDevice().\n");
         return -1;
@@ -916,7 +918,9 @@ inline int gpuGetMaxGflopsDeviceId()
         cudaGetDeviceProperties(&deviceProp, current_device);
 
         // If this GPU is not running on Compute Mode prohibited, then we can add it to the list
-        if (deviceProp.computeMode != cudaComputeModeProhibited)
+		int computeMode;
+		cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, current_device);
+        if (computeMode != cudaComputeModeProhibited)
         {
             if (deviceProp.major > 0 && deviceProp.major < 9999)
             {
@@ -935,7 +939,9 @@ inline int gpuGetMaxGflopsDeviceId()
         cudaGetDeviceProperties(&deviceProp, current_device);
 
         // If this GPU is not running on Compute Mode prohibited, then we can add it to the list
-        if (deviceProp.computeMode != cudaComputeModeProhibited)
+		int computeMode;
+		cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, current_device);
+        if (computeMode != cudaComputeModeProhibited)
         {
             if (deviceProp.major == 9999 && deviceProp.minor == 9999)
             {
@@ -946,7 +952,7 @@ inline int gpuGetMaxGflopsDeviceId()
                 sm_per_multiproc = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
             }
 
-            unsigned long long compute_perf  = (unsigned long long) deviceProp.multiProcessorCount * sm_per_multiproc * deviceProp.clockRate;
+            unsigned long long compute_perf  = (unsigned long long) deviceProp.multiProcessorCount * sm_per_multiproc * 9999;
 
             if (compute_perf  > max_compute_perf)
             {
