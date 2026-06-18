@@ -1,0 +1,10 @@
+My modification of the Rodinia GPU benchmark (CUDA ONLY) at
+https://www.cs.virginia.edu/~skadron/lava/rodinia/downloads.html
+
+1. Patch old code to new CUDA API
+2. Bug fixes
+3. Most importantly, experiment with various GPU optimization techniques on
+these kernels.
+
+Please note that the data is not uploaded with the repo. Please go to the
+link above for the data.
