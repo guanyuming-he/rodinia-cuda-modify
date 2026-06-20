@@ -39,7 +39,7 @@ typedef struct record
   float distance;
 } Record;
 
-int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &locations);
+int loadData(char *filename,std::vector<Record> &records,std::vector<float> &lats, std::vector<float> &lngs);
 void findLowest(std::vector<Record> &records,float *distances,int numRecords,int topN);
 void printUsage();
 int parseCommandline(int argc, char *argv[], char* filename,int *r,float *lat,float *lng,
@@ -50,13 +50,14 @@ int parseCommandline(int argc, char *argv[], char* filename,int *r,float *lat,fl
 * Executed on GPU
 * Calculates the Euclidean distance from each record in the database to the target position
 */
-__global__ void euclid(LatLong *d_locations, float *d_distances, int numRecords,float lat, float lng)
+__global__ void euclid(float *d_lats, float *d_lngs, float *d_distances, int numRecords,float lat, float lng)
 {
 	int globalId = blockDim.x * ( gridDim.x * blockIdx.y + blockIdx.x ) + threadIdx.x; // more efficient
-    LatLong *latLong = d_locations+globalId;
+    float d_lat = *(d_lats+globalId);
+    float d_lng = *(d_lngs+globalId);
     if (globalId < numRecords) {
         float *dist=d_distances+globalId;
-        *dist = (float)sqrt((lat-latLong->lat)*(lat-latLong->lat)+(lng-latLong->lng)*(lng-latLong->lng));
+        *dist = (float)sqrt((lat-d_lat)*(lat-d_lat)+(lng-d_lng)*(lng-d_lng));
 	}
 }
 
@@ -71,7 +72,9 @@ int main(int argc, char* argv[])
 	int quiet=0,timing=0,platform=0,device=0;
 
     std::vector<Record> records;
-	std::vector<LatLong> locations;
+	//std::vector<LatLong> locations;
+	std::vector<float> lats;
+	std::vector<float> lngs;
 	char filename[100];
 	int resultsCount=10;
 
@@ -82,7 +85,7 @@ int main(int argc, char* argv[])
       return 0;
     }
 
-    int numRecords = loadData(filename,records,locations);
+    int numRecords = loadData(filename,records,lats,lngs);
     if (resultsCount > numRecords) resultsCount = numRecords;
 
     //for(i=0;i<numRecords;i++)
@@ -92,7 +95,11 @@ int main(int argc, char* argv[])
     //Pointers to host memory
 	float *distances;
 	//Pointers to device memory
-	LatLong *d_locations;
+
+	// OPT: Coalesced mem access:
+	//LatLong *d_locations;
+	float *d_lats;
+	float *d_lngs;
 	float *d_distances;
 
 
@@ -137,18 +144,22 @@ int main(int argc, char* argv[])
 	* Allocate memory on host and device
 	*/
 	distances = (float *)malloc(sizeof(float) * numRecords);
-	cudaMalloc((void **) &d_locations,sizeof(LatLong) * numRecords);
+	//cudaMalloc((void **) &d_locations,sizeof(LatLong) * numRecords);
+	cudaMalloc((void **) &d_lats, sizeof(float) * numRecords);
+	cudaMalloc((void **) &d_lngs, sizeof(float) * numRecords);
 	cudaMalloc((void **) &d_distances,sizeof(float) * numRecords);
 
    /**
     * Transfer data from host to device
     */
-    cudaMemcpy( d_locations, &locations[0], sizeof(LatLong) * numRecords, cudaMemcpyHostToDevice);
+    //cudaMemcpy( d_locations, &locations[0], sizeof(LatLong) * numRecords, cudaMemcpyHostToDevice);
+    cudaMemcpy( d_lats, &lats[0], sizeof(float) * numRecords, cudaMemcpyHostToDevice);
+    cudaMemcpy( d_lngs, &lngs[0], sizeof(float) * numRecords, cudaMemcpyHostToDevice);
 
     /**
     * Execute kernel
     */
-    euclid<<< gridDim, threadsPerBlock >>>(d_locations,d_distances,numRecords,lat,lng);
+    euclid<<< gridDim, threadsPerBlock >>>(d_lats,d_lngs,d_distances,numRecords,lat,lng);
     cudaDeviceSynchronize();
 
     //Copy data from device memory to host memory
@@ -164,12 +175,14 @@ int main(int argc, char* argv[])
     }
     free(distances);
     //Free memory
-	cudaFree(d_locations);
+	//cudaFree(d_locations);
+	cudaFree(d_lats);
+	cudaFree(d_lngs);
 	cudaFree(d_distances);
 
 }
 
-int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &locations){
+int loadData(char *filename,std::vector<Record> &records,std::vector<float> &lats, std::vector<float> &lngs){
     FILE   *flist,*fp;
 	int    i=0;
 	char dbname[64];
@@ -198,7 +211,6 @@ int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &l
         // read each record
         while(!feof(fp)){
             Record record;
-            LatLong latLong;
 			// each line is exactly 49 characters,
 			// padded by spaces;
 			// each record appear in a fixed range.
@@ -212,14 +224,13 @@ int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &l
 			// lat = recString[28:+5]
             for(i=0;i<5;i++) substr[i] = *(record.recString+i+28);
             substr[5] = '\0';
-            latLong.lat = atof(substr);
+            lats.push_back(atof(substr));
 
 			// lat = recString[33:+5]
             for(i=0;i<5;i++) substr[i] = *(record.recString+i+33);
             substr[5] = '\0';
-            latLong.lng = atof(substr);
+            lngs.push_back(atof(substr));
 
-            locations.push_back(latLong);
             records.push_back(record);
             recNum++;
         }
