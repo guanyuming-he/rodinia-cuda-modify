@@ -286,21 +286,21 @@ void InitPerRun()
  ** of t which is defined on the ForwardSub().
  **-------------------------------------------------------
  */
-__global__ void Fan1(float *m_cuda, float *a_cuda, int Size, int t)
-{   
-	//if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) printf(".");
-	//printf("blockIDx.x:%d,threadIdx.x:%d,Size:%d,t:%d,Size-1-t:%d\n",blockIdx.x,threadIdx.x,Size,t,Size-1-t);
-
-	if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) return;
-	*(m_cuda+Size*(blockDim.x*blockIdx.x+threadIdx.x+t+1)+t) = *(a_cuda+Size*(blockDim.x*blockIdx.x+threadIdx.x+t+1)+t) / *(a_cuda+Size*t+t);
-}
+//__global__ void Fan1(float *m_cuda, float *a_cuda, int Size, int t)
+//{   
+//	//if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) printf(".");
+//	//printf("blockIDx.x:%d,threadIdx.x:%d,Size:%d,t:%d,Size-1-t:%d\n",blockIdx.x,threadIdx.x,Size,t,Size-1-t);
+//
+//	if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) return;
+//	*(m_cuda+Size*(blockDim.x*blockIdx.x+threadIdx.x+t+1)+t) = *(a_cuda+Size*(blockDim.x*blockIdx.x+threadIdx.x+t+1)+t) / *(a_cuda+Size*t+t);
+//}
 
 /*-------------------------------------------------------
  ** Fan2() -- Modify the matrix A into LUD
  **-------------------------------------------------------
  */ 
 
-__global__ void Fan2(float *m_cuda, float *a_cuda, float *b_cuda,int Size, int j1, int t)
+__global__ void Fan2(float *a_cuda, float *b_cuda,int Size, int j1, int t)
 {
 	if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) return;
 	if(threadIdx.y + blockIdx.y * blockDim.y >= Size-t) return;
@@ -309,12 +309,16 @@ __global__ void Fan2(float *m_cuda, float *a_cuda, float *b_cuda,int Size, int j
 	int yidx = blockIdx.y * blockDim.y + threadIdx.y;
 	//printf("blockIdx.x:%d,threadIdx.x:%d,blockIdx.y:%d,threadIdx.y:%d,blockDim.x:%d,blockDim.y:%d\n",blockIdx.x,threadIdx.x,blockIdx.y,threadIdx.y,blockDim.x,blockDim.y);
 	
-	a_cuda[Size*(xidx+1+t)+(yidx+t)] -= m_cuda[Size*(xidx+1+t)+t] * a_cuda[Size*t+(yidx+t)];
+	// recompute m1 = m_cuda[Size*(xidx+1+t)+t] 
+	float m1 = a_cuda[Size*(xidx+1+t)+t] / a_cuda[Size*t+t];
+	
+	a_cuda[Size*(xidx+1+t)+(yidx+t)] -= m1 * a_cuda[Size*t+(yidx+t)];
 	//a_cuda[xidx+1+t][yidx+t] -= m_cuda[xidx+1+t][t] * a_cuda[t][yidx+t];
 	if(yidx == 0){
 		//printf("blockIdx.x:%d,threadIdx.x:%d,blockIdx.y:%d,threadIdx.y:%d,blockDim.x:%d,blockDim.y:%d\n",blockIdx.x,threadIdx.x,blockIdx.y,threadIdx.y,blockDim.x,blockDim.y);
 		//printf("xidx:%d,yidx:%d\n",xidx,yidx);
-		b_cuda[xidx+1+t] -= m_cuda[Size*(xidx+1+t)+(yidx+t)] * b_cuda[t];
+		// m_cuda[Size*(xidx+1+t)+(yidx+t)] = m1, now.
+		b_cuda[xidx+1+t] -= m1 * b_cuda[t];
 	}
 }
 
@@ -362,9 +366,9 @@ void ForwardSub()
     struct timeval time_start;
     gettimeofday(&time_start, NULL);
 	for (t=0; t<(Size-1); t++) {
-		Fan1<<<dimGrid,dimBlock>>>(m_cuda,a_cuda,Size,t);
-		cudaDeviceSynchronize();
-		Fan2<<<dimGridXY,dimBlockXY>>>(m_cuda,a_cuda,b_cuda,Size,Size-t,t);
+		//Fan1<<<dimGrid,dimBlock>>>(m_cuda,a_cuda,Size,t);
+		//cudaDeviceSynchronize();
+		Fan2<<<dimGridXY,dimBlockXY>>>(a_cuda,b_cuda,Size,Size-t,t);
 		cudaDeviceSynchronize();
 		checkCUDAError("Fan2");
 	}
