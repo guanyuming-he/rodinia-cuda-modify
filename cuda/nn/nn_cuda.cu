@@ -56,7 +56,7 @@ __global__ void euclid(LatLong *d_locations, float *d_distances, int numRecords,
     LatLong *latLong = d_locations+globalId;
     if (globalId < numRecords) {
         float *dist=d_distances+globalId;
-        *dist = (float)sqrt((lat-latLong->lat)*(lat-latLong->lat)+(lng-latLong->lng)*(lng-latLong->lng));
+        *dist = (float)(lat-latLong->lat)*(lat-latLong->lat)+(lng-latLong->lng)*(lng-latLong->lng);
 	}
 }
 
