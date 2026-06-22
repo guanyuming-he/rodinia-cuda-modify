@@ -26,7 +26,7 @@
 #elif defined(RD_WG_SIZE)
         #define MAXBLOCKSIZE RD_WG_SIZE
 #else
-        #define MAXBLOCKSIZE 512
+        #define MAXBLOCKSIZE 1024
 #endif
 
 //2D defines. Go from specific to general                                                
@@ -162,8 +162,6 @@ int main(int argc, char *argv[])
     gettimeofday(&time_start, NULL);	
     
     // run kernels
-	printf("This optimization cannot be applied. The program will now exit.\n");
-	exit(1);
     ForwardSub();
     
     //end timing
@@ -304,13 +302,9 @@ void InitPerRun()
 
 __global__ void Fan2(float *m_cuda, float *a_cuda, float *b_cuda,int Size, int j1, int t)
 {
-	// Don't use return, as combining them with __syncthreads barrier causes
-	// undefined behaviour.
-	//if(threadIdx.x + blockIdx.x * blockDim.x >= Size-1-t) return;
-	//if(threadIdx.y + blockIdx.y * blockDim.y >= Size-t) return;
-	
-	int xidx = blockIdx.x * blockDim.x + threadIdx.x;
-	int yidx = blockIdx.y * blockDim.y + threadIdx.y;
+	// each block for a row. xidx: row num; yidx: col num.
+	int yidx = threadIdx.x;
+	int xidx = blockIdx.x;
 	
 	if (xidx < Size-1-t && yidx < Size-t)
 	{
@@ -319,13 +313,8 @@ __global__ void Fan2(float *m_cuda, float *a_cuda, float *b_cuda,int Size, int j
 			m_cuda[Size*(xidx+1+t)+t] = 
 			a_cuda[Size*(xidx+1+t)+t] / a_cuda[Size*t+t];
 	}
-	
-	// __syncthreads must be equally reachable by all threads.
-	// It unfortunately doesn't work here, as it only syncs intra-block.
-	// I need to sync across all threads.
-	// __syncthreads();
-	assert(false);
-		
+	// we can now sync threads, since a block is a row.
+	__syncthreads();
 	if (xidx < Size-1-t && yidx < Size-t)
 	{
 		float m1 = m_cuda[Size*(xidx+1+t)+t]; 
@@ -369,12 +358,15 @@ void ForwardSub()
 	dim3 dimGrid(grid_size);
 	//dim3 dimGrid( (N/dimBlock.x) + (!(N%dimBlock.x)?0:1) );
 	
-	int blockSize2d, gridSize2d;
-	blockSize2d = BLOCK_SIZE_XY;
-	gridSize2d = (Size/blockSize2d) + (!(Size%blockSize2d?0:1)); 
+	//int blockSize2d, gridSize2d;
+	//blockSize2d = BLOCK_SIZE_XY;
+	//gridSize2d = (Size/blockSize2d) + (!(Size%blockSize2d?0:1)); 
 	
-	dim3 dimBlockXY(blockSize2d,blockSize2d);
-	dim3 dimGridXY(gridSize2d,gridSize2d);
+	// each row in a block
+	// Size = num of cols
+	dim3 dimBlockFan2(Size);
+	// Size = num of rows
+	dim3 dimGridFan2(Size);
 
     // begin timing kernels
     struct timeval time_start;
@@ -382,7 +374,7 @@ void ForwardSub()
 	for (t=0; t<(Size-1); t++) {
 		//Fan1<<<dimGrid,dimBlock>>>(m_cuda,a_cuda,Size,t);
 		//cudaDeviceSynchronize();
-		Fan2<<<dimGridXY,dimBlockXY>>>(m_cuda,a_cuda,b_cuda,Size,Size-t,t);
+		Fan2<<<dimBlockFan2, dimGridFan2>>>(m_cuda,a_cuda,b_cuda,Size,Size-t,t);
 		cudaDeviceSynchronize();
 		checkCUDAError("Fan2");
 	}
