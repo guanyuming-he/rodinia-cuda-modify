@@ -19,21 +19,23 @@ The CUDA Kernel for Applying BFS on a loaded Graph. Created By Pawan Harish
 #define _KERNEL_H_
 
 __global__ void
-Kernel( Node* g_graph_nodes, int* g_graph_edges, bool* g_graph_mask, bool* g_updating_graph_mask, bool *g_graph_visited, int* g_cost, int no_of_nodes) 
+Kernel( Node* g_graph_nodes, int* g_graph_edges_startend, bool* g_graph_mask, bool* g_updating_graph_mask, bool *g_graph_visited, int* g_cost, int edge_list_size) 
 {
-	int tid = blockIdx.x*MAX_THREADS_PER_BLOCK + threadIdx.x;
-	if( tid<no_of_nodes && g_graph_mask[tid])
+	int tid = blockIdx.x * 1024 + threadIdx.x;
+	if( tid<edge_list_size)
 	{
-		g_graph_mask[tid]=false;
-		for(int i=g_graph_nodes[tid].starting; i<(g_graph_nodes[tid].no_of_edges + g_graph_nodes[tid].starting); i++)
+		int start = g_graph_edges_startend[2*tid];
+		int end = g_graph_edges_startend[2*tid+1];
+
+		if (g_graph_mask[start]) // is start in q2?
+		{
+			g_graph_mask[start]=false;
+			if(!g_graph_visited[end])
 			{
-			int id = g_graph_edges[i];
-			if(!g_graph_visited[id])
-				{
-				g_cost[id]=g_cost[tid]+1;
-				g_updating_graph_mask[id]=true;
-				}
+				g_cost[end]=g_cost[start]+1;
+				g_updating_graph_mask[end]=true;
 			}
+		}
 	}
 }
 

@@ -80,17 +80,6 @@ void BFSGraph( int argc, char** argv)
 
 	fscanf(fp,"%d",&no_of_nodes);
 
-	int num_of_blocks = 1;
-	int num_of_threads_per_block = no_of_nodes;
-
-	//Make execution Parameters according to the number of nodes
-	//Distribute threads across multiple Blocks if necessary
-	if(no_of_nodes>MAX_THREADS_PER_BLOCK)
-	{
-		num_of_blocks = (int)ceil(no_of_nodes/(double)MAX_THREADS_PER_BLOCK); 
-		num_of_threads_per_block = MAX_THREADS_PER_BLOCK; 
-	}
-
 	// allocate host memory
 	Node* h_graph_nodes = (Node*) malloc(sizeof(Node)*no_of_nodes);
 	bool *h_graph_mask = (bool*) malloc(sizeof(bool)*no_of_nodes);
@@ -128,10 +117,33 @@ void BFSGraph( int argc, char** argv)
 		h_graph_edges[i] = id;
 	}
 
+	// This edge list records both start and end, to enable edge-centric BFS.
+	int* h_graph_edges_startend = (int*)malloc(sizeof(int)*2*edge_list_size);
+	int j = 0;
+	for(int i=0; i < no_of_nodes; ++i)
+	{
+		Node* pn = h_graph_nodes+i;
+		int starting = pn->starting;
+		int ending = (pn->starting+pn->no_of_edges);
+		for(j = starting; j < ending; ++j)
+		{
+			h_graph_edges_startend[2*j]=i;
+			h_graph_edges_startend[2*j+1]=h_graph_edges[j];
+		}
+	}
+	//for (int i = 0; i < edge_list_size; ++i)
+	//{
+	//	printf("%d %d ", h_graph_edges_startend[2*i], h_graph_edges_startend[2*i+1]);
+	//}
+	//exit(1);
+
 	if(fp)
 		fclose(fp);    
 
 	printf("Read File\n");
+
+	int num_of_blocks = (edge_list_size/1024) +1;
+	int num_of_threads_per_block = 1024;
 
 	//Copy the Node list to device memory
 	Node* d_graph_nodes;
@@ -142,6 +154,10 @@ void BFSGraph( int argc, char** argv)
 	int* d_graph_edges;
 	cudaMalloc( (void**) &d_graph_edges, sizeof(int)*edge_list_size) ;
 	cudaMemcpy( d_graph_edges, h_graph_edges, sizeof(int)*edge_list_size, cudaMemcpyHostToDevice) ;
+	int* d_graph_edges_startend;
+	cudaMalloc( (void**) &d_graph_edges_startend, sizeof(int)*edge_list_size*2) ;
+	cudaMemcpy( d_graph_edges_startend, h_graph_edges_startend,
+			sizeof(int)*edge_list_size*2, cudaMemcpyHostToDevice) ;
 
 	//Copy the Mask to device memory
 	bool* d_graph_mask;
@@ -188,9 +204,9 @@ void BFSGraph( int argc, char** argv)
 		stop=false;
 		cudaMemcpy( d_over, &stop, sizeof(bool), cudaMemcpyHostToDevice) ;
 		Kernel<<< grid, threads, 0 >>>(
-			d_graph_nodes, d_graph_edges,
+			d_graph_nodes, d_graph_edges_startend,
 			d_graph_mask, d_updating_graph_mask, d_graph_visited, d_cost,
-			no_of_nodes
+			edge_list_size
 		);
 		// note the author explicitly specifies 0 as the third arg, which makes
 		// both kernels launch in stream 0.
