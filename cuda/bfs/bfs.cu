@@ -187,12 +187,19 @@ void BFSGraph( int argc, char** argv)
 		//if no thread changes this value then the loop stops
 		stop=false;
 		cudaMemcpy( d_over, &stop, sizeof(bool), cudaMemcpyHostToDevice) ;
-		Kernel<<< grid, threads, 0 >>>( d_graph_nodes, d_graph_edges, d_graph_mask, d_updating_graph_mask, d_graph_visited, d_cost, no_of_nodes);
-		// check if kernel execution generated and error
-		
-
-		Kernel2<<< grid, threads, 0 >>>( d_graph_mask, d_updating_graph_mask, d_graph_visited, d_over, no_of_nodes);
-		// check if kernel execution generated and error
+		Kernel<<< grid, threads, 0 >>>(
+			d_graph_nodes, d_graph_edges,
+			d_graph_mask, d_updating_graph_mask, d_graph_visited, d_cost,
+			no_of_nodes
+		);
+		// note the author explicitly specifies 0 as the third arg, which makes
+		// both kernels launch in stream 0.
+		// A kernel in a stream will not get to execute until kernels before it
+		// in the same stream finished execution.
+		Kernel2<<< grid, threads, 0 >>>(
+			d_graph_mask, d_updating_graph_mask,
+			d_graph_visited, d_over, no_of_nodes
+		);
 		
 
 		cudaMemcpy( &stop, d_over, sizeof(bool), cudaMemcpyDeviceToHost) ;
