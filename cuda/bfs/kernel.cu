@@ -25,6 +25,7 @@ Kernel( Node* g_graph_nodes, int* g_graph_edges, bool* g_graph_mask, bool* g_upd
 	if( tid<no_of_nodes && g_graph_mask[tid])
 	{
 		g_graph_mask[tid]=false;
+#pragma unroll
 		for(int i=g_graph_nodes[tid].starting; i<(g_graph_nodes[tid].no_of_edges + g_graph_nodes[tid].starting); i++)
 			{
 			int id = g_graph_edges[i];
