@@ -26,3 +26,6 @@
 *.qdrep
 *.sqlite
 *.sass
+
+# compiler mid product
+*.ii

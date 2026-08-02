@@ -1,7 +1,7 @@
 include ../../common/make.config
 CC := $(CUDA_DIR)/bin/nvcc
 
-CC_FLAGS = -arch=sm_89
+CC_FLAGS = -arch=sm_89 -lineinfo 
 
 ifdef VERIFY
 override VERIFY = -DVERIFY

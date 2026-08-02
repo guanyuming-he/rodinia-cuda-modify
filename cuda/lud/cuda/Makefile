@@ -31,14 +31,14 @@ OBJS = ../common/common.o lud.o lud_kernel.o
 all : $(EXECUTABLE)
 
 .c.o : 
-	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
+	$(NVCC) -lineinfo $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
 
 %.o:	%.cu 
-	$(NVCC) $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
+	$(NVCC) -lineinfo $(KERNEL_DIM) $(NVCCFLAGS) $(DEFS) -o $@ -c $<
 
 
 $(EXECUTABLE) : $(OBJS)
-	$(NVCC) $(NVCCFLAGS) -o $@  $?
+	$(NVCC) -lineinfo $(NVCCFLAGS) -o $@  $?
 
 clean:
 	rm -f $(EXECUTABLE) $(OBJS) *.linkinfo

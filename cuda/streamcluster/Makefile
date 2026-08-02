@@ -2,7 +2,7 @@ include ../../common/make.config
 
 NVCC = $(CUDA_DIR)/bin/nvcc
 
-NVCC_FLAGS = -I$(CUDA_DIR)/include
+NVCC_FLAGS = -I$(CUDA_DIR)/include -lineinfo 
 
 TARGET_G = sc_gpu
 

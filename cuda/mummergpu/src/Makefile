@@ -8,7 +8,7 @@ include ../experiments/test_rule.mk
 CUDA_INSTALL_PATH := $(CUDA_DIR)
 
 # Compilers
-NVCC       := $(CUDA_INSTALL_PATH)/bin/nvcc 
+NVCC       := $(CUDA_INSTALL_PATH)/bin/nvcc -lineinfo 
 CXX        := g++ -fopenmp $(PROFILE)
 CC         := gcc 
 LINK       := $(NVCC) -Xcompiler -fopenmp -Xcompiler -m64 -Xcompiler -fPIC -L ../lib $(PROFILE)
