@@ -52,7 +52,6 @@ int parseCommandline(int argc, char *argv[], char* filename,int *r,float *lat,fl
 */
 __global__ void euclid(LatLong *d_locations, float *d_distances, int numRecords,float lat, float lng)
 {
-	//int globalId = gridDim.x * blockDim.x * blockIdx.y + blockDim.x * blockIdx.x + threadIdx.x;
 	int globalId = blockDim.x * ( gridDim.x * blockIdx.y + blockIdx.x ) + threadIdx.x; // more efficient
     LatLong *latLong = d_locations+globalId;
     if (globalId < numRecords) {
@@ -62,9 +61,9 @@ __global__ void euclid(LatLong *d_locations, float *d_distances, int numRecords,
 }
 
 /**
-* This program finds the k-nearest neighbors
+* This program finds the k-nearest neighbors of a specific (lat,lng).
+* Input: records database, k, lat, lng
 **/
-
 int main(int argc, char* argv[])
 {
 	int    i=0;
@@ -200,6 +199,9 @@ int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &l
         while(!feof(fp)){
             Record record;
             LatLong latLong;
+			// each line is exactly 49 characters,
+			// padded by spaces;
+			// each record appear in a fixed range.
             fgets(record.recString,49,fp);
             fgetc(fp); // newline
             if (feof(fp)) break;
@@ -207,10 +209,12 @@ int loadData(char *filename,std::vector<Record> &records,std::vector<LatLong> &l
             // parse for lat and long
             char substr[6];
 
+			// lat = recString[28:+5]
             for(i=0;i<5;i++) substr[i] = *(record.recString+i+28);
             substr[5] = '\0';
             latLong.lat = atof(substr);
 
+			// lat = recString[33:+5]
             for(i=0;i<5;i++) substr[i] = *(record.recString+i+33);
             substr[5] = '\0';
             latLong.lng = atof(substr);

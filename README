@@ -8,3 +8,21 @@ these kernels.
 
 Please note that the data is not uploaded with the repo. Please go to the
 link above for the data.
+
+Each optimization is done in a single branch, because of the dependency and
+compatibility of the changes. There simply is no way that everything is merged
+into master.
+
+Current tree:
+* 4868d7e (gau_rowblock_fusion) change grid topology to successfully fuse kernels.
+* d8d74ac (gau_fusion) unable to naively fuse kernel.
+| * 11da641 (origin/gau_recompute, gau_recompute) recompute commit 1.
+|/  
+| *   a014232 (origin/nn_both_nosqrt_coal, nn_both_nosqrt_coal) merge nosqrt and coal to apply both opt.
+| |\  
+| | * 0cb1294 (origin/nn_coalesced_opt, nn_coalesced_opt) apply coalesced opt.
+| |/  
+|/|   
+| * 0a38f29 (origin/nn_nosqrt, nn_nosqrt) rm sqrt opt.
+|/  
+* 000e58d (HEAD -> master, origin/nn_baseline, origin/master, origin/gau_baseline, nn_baseline, gau_baseline) add some comments.
