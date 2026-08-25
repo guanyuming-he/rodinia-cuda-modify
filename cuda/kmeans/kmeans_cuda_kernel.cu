@@ -30,6 +30,13 @@ __constant__ float c_clusters[ASSUMED_NR_CLUSTERS*34];
    [dim1,p0][dim1,p1][dim1,p2] ...
    [dim2,p0][dim2,p1][dim2,p2] ...
 */
+#ifdef CUSTOM_PTX
+extern "C" 
+__global__ void invert_mapping(float *input,			/* original */
+							   float *output,			/* inverted */
+							   int npoints,				/* npoints */
+							   int nfeatures);			/* nfeatures */
+#else
 __global__ void invert_mapping(float *input,			/* original */
 							   float *output,			/* inverted */
 							   int npoints,				/* npoints */
@@ -44,6 +51,7 @@ __global__ void invert_mapping(float *input,			/* original */
 	}
 	return;
 }
+#endif // CUSTOM_PTX
 /* ----------------- invert_mapping() end --------------------- */
 
 /* to turn on the GPU delta and center reduction */
@@ -53,6 +61,18 @@ __global__ void invert_mapping(float *input,			/* original */
 
 /* ----------------- kmeansPoint() --------------------- */
 /* find the index of nearest cluster centers and change membership*/
+#ifdef CUSTOM_PTX
+extern "C"
+__global__ void
+kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
+            int     nfeatures,
+            int     npoints,
+            int     nclusters,
+            int    *membership,
+			float  *clusters,
+			float  *block_clusters,
+			int    *block_deltas);
+#else
 __global__ void
 kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
             int     nfeatures,
@@ -181,4 +201,5 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 #endif
 
 }
+#endif // CUSTOM_PTX
 #endif // #ifndef _KMEANS_CUDA_KERNEL_H_

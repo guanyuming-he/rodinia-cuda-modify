@@ -30,6 +30,8 @@ kmeans: cluster.o getopt.o kmeans.o kmeans_clustering.o kmeans_cuda.o rmse.o
 
 kmeans_cuda.o: kmeans_cuda.cu 
 	$(NVCC) $(NVCC_FLAGS) -c kmeans_cuda.cu
+kmeans_cuda_ptx.o: kmeans_cuda.cu 
+	$(NVCC) $(NVCC_FLAGS) -DCUSTOM_PTX -dc kmeans_cuda.cu -o ./kmeans_cuda_ptx.o
 
 clean:
 	rm -f *.o *~ kmeans kmeans_cuda.linkinfo
